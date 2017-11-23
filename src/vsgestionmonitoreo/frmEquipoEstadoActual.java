@@ -182,13 +182,13 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
             }
 
             DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) this.jtCiudades.getLastSelectedPathComponent();
-            if (valor == "Monitoreo") {
+            if ("Monitoreo".equals(valor)) {
                 ((Monitoreo) selectedNode.getUserObject()).setiCantidadFallas(cuenta);
             }
-            if (valor == "Ciudad") {
+            if ("Ciudad".equals(valor)) {
                 ((Ciudad) selectedNode.getUserObject()).setiCantidadFallas(cuenta);
             }
-            if (valor == "Equipo") {
+            if ("Equipo".equals(valor)) {
                 ((Equipo) selectedNode.getUserObject()).setiCantidadFallas(cuenta);
             }
 
