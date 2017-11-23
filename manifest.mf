@@ -1,0 +1,6 @@
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.9.7
+Created-By: 1.8.0_141-b15 (Oracle Corporation)
+Class-Path: lib/mysql-connector-java-5.1.44-bin.jar
+Main-Class: vsgestionmonitoreo.Main
+
