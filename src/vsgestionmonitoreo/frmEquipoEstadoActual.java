@@ -43,6 +43,7 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
     conectar cc;
     Connection cn;
     String sRutaPlanos;
+    String ssqlTotal;
     String ssql;
     String ssqlHistorial;
     String ssqlConteo;
@@ -54,9 +55,11 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
         this.cn = cc.conexion();
         this.sRutaPlanos = "/";
         this.iIntervaloLectura = 120000;
-        this.ssql = "SELECT eea.Equipo_idEquipo,e.nombreEquipo,c.idCiudad,c.nombreCiudad, eea.EstadoOperacion_idEstadoOperacion,eo.descripcionEstado,eea.fechaHora horaServidor,eea.fechaHoraCliente,cast(timediff( now(),eea.fechaHoraCliente) as char), eea.detalleEstadoOperacion, eea.actualizacionno "
+        this.ssqlTotal = "SELECT eea.Equipo_idEquipo,e.nombreEquipo,c.idCiudad,c.nombreCiudad, eea.EstadoOperacion_idEstadoOperacion,eo.descripcionEstado,eea.fechaHora horaServidor,eea.fechaHoraCliente,cast(timediff( now(),eea.fechaHoraCliente) as char), eea.detalleEstadoOperacion, eea.actualizacionno "
                 + "  FROM equipoestadoactual eea,EstadoOperacion eo,Equipo e, Ciudad c  "
-                + "  WHERE bCorrecto=0 AND eea.Equipo_idEquipo=e.idEquipo AND eea.EstadoOperacion_idEstadoOperacion=eo.idEstadoOperacion AND c.idCiudad=e.Ciudad_idCiudad ";
+                + "  WHERE bCorrecto=0 AND eea.Equipo_idEquipo=e.idEquipo AND eea.EstadoOperacion_idEstadoOperacion=eo.idEstadoOperacion AND c.idCiudad=e.Ciudad_idCiudad AND e.activo=1 AND c.activo=1 ";
+        this.ssql = ssqlTotal;
+
         this.ssqlHistorial = "SELECT eea.Equipo_idEquipo,e.nombreEquipo,c.idCiudad,c.nombreCiudad, eea.EstadoOperacion_idEstadoOperacion,eo.descripcionEstado,eea.fechaHora horaServidor,eea.fechaHoraCliente,cast(timediff( now(),eea.fechaHoraCliente) as char), eea.detalleEstadoOperacion,eea.bcorrecto "
                 + "  FROM equipoestado eea,EstadoOperacion eo,Equipo e, Ciudad c  "
                 + "  WHERE eea.Equipo_idEquipo=e.idEquipo AND eea.EstadoOperacion_idEstadoOperacion=eo.idEstadoOperacion AND c.idCiudad=e.Ciudad_idCiudad "
@@ -84,7 +87,7 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 mostrardatos("");
-                informarNovedades(); 
+                informarNovedades();
 
             }
         });
@@ -237,7 +240,7 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
                 datos[10] = rs.getString(11);
                 modeloHistorial.addRow(datos);
             }
-            System.out.println(cuenta);
+          
         } catch (SQLException ex) {
             System.out.println(ex.getMessage());
         }
@@ -394,14 +397,8 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
                 }
             }
         }
-
-        ssql = "SELECT eea.Equipo_idEquipo,e.nombreEquipo,c.idCiudad,c.nombreCiudad, eea.EstadoOperacion_idEstadoOperacion,eo.descripcionEstado,eea.fechaHora horaServidor,eea.fechaHoraCliente,cast(timediff( now(),eea.fechaHoraCliente) as char), eea.detalleEstadoOperacion, eea.actualizacionno "
-                + "  FROM equipoestadoactual eea,EstadoOperacion eo,Equipo e, Ciudad c  "
-                + "  WHERE bCorrecto=0 AND eea.Equipo_idEquipo=e.idEquipo AND eea.EstadoOperacion_idEstadoOperacion=eo.idEstadoOperacion AND c.idCiudad=e.Ciudad_idCiudad "
-                + sWhereAux;
-
+        ssql = this.ssqlTotal     + sWhereAux;
         this.mostrardatos(sTipoNodo);
-        //this.modificaTreeview();
     }
 
     /**
@@ -423,7 +420,7 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
         }
         ssqlConteo = "SELECT count(*) "
                 + "  FROM equipoestadoactual eea,EstadoOperacion eo,Equipo e, Ciudad c  "
-                + "  WHERE bCorrecto=0 AND eea.Equipo_idEquipo=e.idEquipo AND eea.EstadoOperacion_idEstadoOperacion=eo.idEstadoOperacion AND c.idCiudad=e.Ciudad_idCiudad "
+                + "  WHERE bCorrecto=0 AND eea.Equipo_idEquipo=e.idEquipo AND eea.EstadoOperacion_idEstadoOperacion=eo.idEstadoOperacion AND c.idCiudad=e.Ciudad_idCiudad  AND c.activo=1 AND e.activo=1"
                 + sWhereAux;
         return ssqlConteo;
     }
@@ -476,7 +473,7 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
         this.rootgeneral = root;
         int iCantidadFallas = this.contar("Monitoreo", "");
         mn.setiCantidadFallas(iCantidadFallas);
-        String sql = "SELECT idciudad,nombreciudad  FROM ciudad ";
+        String sql = "SELECT idciudad,nombreciudad  FROM ciudad WHERE activo=1";
         int iCantidadNovedadesGeneral = 0;
         int cuenta = 0;
         try {
@@ -495,7 +492,7 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
                 iCantidadFallas = this.contar("Ciudad", rs.getString(2));
                 cd.setiCantidadFallas(iCantidadFallas);
 
-                String sql2 = "SELECT idEquipo,nombreEquipo  FROM equipo where Ciudad_idCiudad=" + Integer.toString(rs.getInt(1));
+                String sql2 = "SELECT idEquipo,nombreEquipo  FROM equipo where activo=1 AND Ciudad_idCiudad=" + Integer.toString(rs.getInt(1));
                 int cuenta2 = 0;
                 int iCantidadNovedades = 0;
                 try {
@@ -634,12 +631,16 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
     public void informarNovedades() {
 
         DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) frmEquipoEstadoActual.this.jtCiudades.getLastSelectedPathComponent();
-        TreeNode p;
-        if (!selectedNode.isRoot()) {
-            p = selectedNode.getParent();
-
+        TreeNode p = null;
+        if (null == selectedNode) {
         } else {
-            p = selectedNode;
+
+            if (!selectedNode.isRoot()) {
+                p = selectedNode.getParent();
+
+            } else {
+                p = selectedNode;
+            }
         }
         TreeSelectionModel tsm = jtCiudades.getSelectionModel();
         jtCiudades.setSelectionModel(null);
@@ -648,7 +649,7 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
         try {
             Statement st;
             st = cn.createStatement();
-            ResultSet rs = st.executeQuery(ssql);
+            ResultSet rs = st.executeQuery(ssqlTotal);
             while (rs.next()) {
                 if (rs.getString(11).equals("0")) {
                     this.reproducirSonido();
@@ -666,7 +667,9 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
         }
 
         modificaTreeview();
-        jtCiudades.expandPath(new TreePath(((DefaultMutableTreeNode) p).getPath()));
+        if (null != selectedNode) {
+            jtCiudades.expandPath(new TreePath(((DefaultMutableTreeNode) p).getPath()));
+        }
         jtCiudades.setSelectionModel(tsm);
     }
 

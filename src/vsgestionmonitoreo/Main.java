@@ -21,7 +21,7 @@ public class Main {
         java.awt.EventQueue.invokeLater(new Runnable() {
 
             public void run() {
-                       new frmEquipoEstadoActual().setVisible(true) ;
+                   new frmEquipoEstadoActual().setVisible(true) ;
             }
         });
 
