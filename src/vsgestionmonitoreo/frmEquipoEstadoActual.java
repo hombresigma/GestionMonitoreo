@@ -8,6 +8,7 @@ package vsgestionmonitoreo;
 import Modelo.Ciudad;
 import Modelo.Equipo;
 import Modelo.Monitoreo;
+import java.awt.Dialog;
 import java.awt.event.ActionEvent;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -38,6 +39,7 @@ import javax.swing.tree.TreeSelectionModel;
 
 public final class frmEquipoEstadoActual extends javax.swing.JFrame {
 
+    private final static Logger LOG_RAIZ = Logger.getLogger("bitacora");
     DefaultTableModel modelo;
     DefaultTableModel modeloHistorial;
     conectar cc;
@@ -67,29 +69,28 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
         String sql = "SELECT rutaPlanos,intervaloLectura FROM configuracion ";
 
         try {
-            Statement st = cn.createStatement();
-            ResultSet rs = st.executeQuery(sql);
-            while (rs.next()) {
-                sRutaPlanos = rs.getString(1);
-                iIntervaloLectura = rs.getInt(2);
-                break;
+            try (Statement st = cn.createStatement()) {
+                ResultSet rs = st.executeQuery(sql);
+                while (rs.next()) {
+                    sRutaPlanos = rs.getString(1);
+                    iIntervaloLectura = rs.getInt(2);
+                    break;
+                }
             }
         } catch (SQLException ex) {
+            LOG_RAIZ.log(Level.INFO, "Error leyendo configuración ");
         }
 
+        LOG_RAIZ.log(Level.INFO, "Lectura de planos {0} cada {1} mseg ", new Object[]{sRutaPlanos, Integer.toString(iIntervaloLectura)});
         initComponents();
         initModelo();
         this.initModeloHistorial();
         initTreeview();
         mostrardatos("");
 
-        timer = new Timer(iIntervaloLectura, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                mostrardatos("");
-                informarNovedades();
-
-            }
+        timer = new Timer(iIntervaloLectura, (ActionEvent e) -> {
+            mostrardatos("");
+            informarNovedades();
         });
         timer.setRepeats(true);
         timer.start();
@@ -165,23 +166,24 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
 
         try {
             int cuenta = 0;
-            Statement st = cn.createStatement();
-            ResultSet rs = st.executeQuery(ssql);
-            while (rs.next()) {
-                cuenta++;
-                Object[] datos = {"", "", "", "", "", "", "", "", "", "", new Boolean(false)};
-                datos[0] = rs.getString(1);
-                datos[1] = rs.getString(2);
-                datos[2] = rs.getString(3);
-                datos[3] = rs.getString(4);
-                datos[4] = rs.getString(5);
-                datos[5] = rs.getString(6);
-                datos[6] = rs.getString(7);
-                datos[7] = rs.getString(8);
-                datos[8] = rs.getString(9);
-                datos[9] = rs.getString(10);
-                datos[10] = rs.getBoolean(11);
-                modelo.addRow(datos);
+            try (Statement st = cn.createStatement()) {
+                ResultSet rs = st.executeQuery(ssql);
+                while (rs.next()) {
+                    cuenta++;
+                    Object[] datos = {"", "", "", "", "", "", "", "", "", "", false};
+                    datos[0] = rs.getString(1);
+                    datos[1] = rs.getString(2);
+                    datos[2] = rs.getString(3);
+                    datos[3] = rs.getString(4);
+                    datos[4] = rs.getString(5);
+                    datos[5] = rs.getString(6);
+                    datos[6] = rs.getString(7);
+                    datos[7] = rs.getString(8);
+                    datos[8] = rs.getString(9);
+                    datos[9] = rs.getString(10);
+                    datos[10] = rs.getBoolean(11);
+                    modelo.addRow(datos);
+                }
             }
 
             DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) this.jtCiudades.getLastSelectedPathComponent();
@@ -196,7 +198,7 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
             }
 
         } catch (SQLException ex) {
-            System.out.println(ex.getMessage());
+            LOG_RAIZ.log(Level.INFO, "Error mostrando datos");
         }
     }
 
@@ -212,37 +214,34 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
         String ssqlHistorial1 = ssqlHistorial.replaceFirst("((1))", sValor);
         sValor = (String) tbTabla.getValueAt(iFila, 4);
         ssqlHistorial1 = ssqlHistorial1.replaceFirst("((2))", sValor);
-        try {
-            int filas = tbTablaHistorial.getRowCount();
-            for (int i = 0; filas > i; i++) {
-                modeloHistorial.removeRow(0);
-            }
-        } catch (Exception e) {
-
+        int filas = tbTablaHistorial.getRowCount();
+        for (int i = 0; filas > i; i++) {
+            modeloHistorial.removeRow(0);
         }
         String[] datos = new String[11];
         try {
             int cuenta = 0;
-            Statement st = cn.createStatement();
-            ResultSet rs = st.executeQuery(ssqlHistorial1);
-            while (rs.next()) {
-                cuenta++;
-                datos[0] = rs.getString(1);
-                datos[1] = rs.getString(2);
-                datos[2] = rs.getString(3);
-                datos[3] = rs.getString(4);
-                datos[4] = rs.getString(5);
-                datos[5] = rs.getString(6);
-                datos[6] = rs.getString(7);
-                datos[7] = rs.getString(8);
-                datos[8] = rs.getString(9);
-                datos[9] = rs.getString(10);
-                datos[10] = rs.getString(11);
-                modeloHistorial.addRow(datos);
+            try (Statement st = cn.createStatement()) {
+                ResultSet rs = st.executeQuery(ssqlHistorial1);
+                while (rs.next()) {
+                    cuenta++;
+                    datos[0] = rs.getString(1);
+                    datos[1] = rs.getString(2);
+                    datos[2] = rs.getString(3);
+                    datos[3] = rs.getString(4);
+                    datos[4] = rs.getString(5);
+                    datos[5] = rs.getString(6);
+                    datos[6] = rs.getString(7);
+                    datos[7] = rs.getString(8);
+                    datos[8] = rs.getString(9);
+                    datos[9] = rs.getString(10);
+                    datos[10] = rs.getString(11);
+                    modeloHistorial.addRow(datos);
+                }
             }
-          
+
         } catch (SQLException ex) {
-            System.out.println(ex.getMessage());
+            LOG_RAIZ.log(Level.INFO, "Error cargando registros de datos de equipos ");
         }
     }
 
@@ -262,7 +261,7 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
         jtCiudades = new javax.swing.JTree();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("SISTEMA DE MONITOREO DE EQUIPOS VELSIS");
+        setTitle("SISTEMA DE MONITOREO DE EQUIPOS VELSIS 1.0.0");
         addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
                 formKeyPressed(evt);
@@ -397,7 +396,7 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
                 }
             }
         }
-        ssql = this.ssqlTotal     + sWhereAux;
+        ssql = this.ssqlTotal + sWhereAux;
         this.mostrardatos(sTipoNodo);
     }
 
@@ -477,57 +476,60 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
         int iCantidadNovedadesGeneral = 0;
         int cuenta = 0;
         try {
-            Statement st = cn.createStatement();
-            ResultSet rs = st.executeQuery(sql);
-            rs.first();
-            do {
-                if (cuenta > 20) {
-                    System.out.println("Se supera máximo de ciudades");
-                    break;
-                }
-                Ciudad cd = new Ciudad();
-                cd.setNombreCiudad(rs.getString(2));
-                DefaultMutableTreeNode nodoCiudad = new DefaultMutableTreeNode(cd);
+            try (Statement st = cn.createStatement()) {
+                ResultSet rs = st.executeQuery(sql);
+                while (rs.next()) {
+                    if (cuenta > 20) {
+                        System.out.println("Se supera máximo de ciudades");
+                        break;
+                    }
+                    Ciudad cd = new Ciudad();
+                    cd.setNombreCiudad(rs.getString(2));
+                    DefaultMutableTreeNode nodoCiudad = new DefaultMutableTreeNode(cd);
 
-                iCantidadFallas = this.contar("Ciudad", rs.getString(2));
-                cd.setiCantidadFallas(iCantidadFallas);
+                    iCantidadFallas = this.contar("Ciudad", rs.getString(2));
+                    cd.setiCantidadFallas(iCantidadFallas);
 
-                String sql2 = "SELECT idEquipo,nombreEquipo  FROM equipo where activo=1 AND Ciudad_idCiudad=" + Integer.toString(rs.getInt(1));
-                int cuenta2 = 0;
-                int iCantidadNovedades = 0;
-                try {
-                    Statement st2 = cn.createStatement();
-                    ResultSet rs2 = st2.executeQuery(sql2);
-                    rs2.first();
-                    do {
-                        if (cuenta2 > 100) {
-                            System.out.println("Se supera máximo de equipos");
-                            break;
+                    String sql2 = "SELECT idEquipo,nombreEquipo  FROM equipo where activo=1 AND Ciudad_idCiudad=" + Integer.toString(rs.getInt(1));
+                    int cuenta2 = 0;
+                    int iCantidadNovedades = 0;
+                    try (Statement st2 = cn.createStatement()) {
+                        try {
+                            ResultSet rs2 = st2.executeQuery(sql2);
+                            while (rs2.next()) {
+                                if (cuenta2 > 100) {
+                                    System.out.println("Se supera máximo de equipos");
+                                    break;
+                                }
+                                Equipo eq = new Equipo();
+                                eq.setNombreEquipo(rs2.getString(2));
+                                DefaultMutableTreeNode nodoEquipo = new DefaultMutableTreeNode(eq);
+
+                                iCantidadFallas = this.contar("Equipo", rs2.getString(2));
+                                eq.setiCantidadFallas(iCantidadFallas);
+                                nodoCiudad.add(nodoEquipo);
+                                iCantidadNovedades = iCantidadNovedades + eq.getiCantidadFallas();
+                                cuenta2++;
+                            }
+
+                        } catch (SQLException ex) {
+                            LOG_RAIZ.log(Level.INFO, "Error iniciando \u00e1rbol de equipos {0}", ex.getMessage());
                         }
-                        Equipo eq = new Equipo();
-                        eq.setNombreEquipo(rs2.getString(2));
-                        DefaultMutableTreeNode nodoEquipo = new DefaultMutableTreeNode(eq);
+                    }
 
-                        iCantidadFallas = this.contar("Equipo", rs2.getString(2));
-                        eq.setiCantidadFallas(iCantidadFallas);
-                        nodoCiudad.add(nodoEquipo);
-                        iCantidadNovedades = iCantidadNovedades + eq.getiCantidadFallas();
-                        cuenta2++;
-                    } while (rs2.next());
-                } catch (SQLException ex) {
-
+                    cd.setiCantidadFallas(iCantidadNovedades);
+                    root.add(nodoCiudad);
+                    iCantidadNovedadesGeneral = iCantidadNovedadesGeneral + iCantidadNovedades;
+                    cuenta++;
                 }
-                cd.setiCantidadFallas(iCantidadNovedades);
-                root.add(nodoCiudad);
-                iCantidadNovedadesGeneral = iCantidadNovedadesGeneral + iCantidadNovedades;
-                cuenta++;
-            } while (rs.next());
+            }
             //jtCiudades.expandPath(jtCiudades.getEditingPath());
             mn.setiCantidadFallas(iCantidadNovedadesGeneral);
             DefaultTreeModel modelo1 = new DefaultTreeModel(root);
             jtCiudades.setModel(modelo1);
-        } catch (SQLException ex) {
 
+        } catch (SQLException ex) {
+            LOG_RAIZ.log(Level.INFO, "Error iniciando árbol de equipos ");
         }
     }
 
@@ -550,26 +552,23 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
             }
         }
 
-        //TreePath p;
-        //TreeSelectionModel a = this.jtCiudades.getSelectionModel();
-        //p = a.getSelectionPath();
         DefaultTreeModel model = (DefaultTreeModel) this.jtCiudades.getModel();
-        DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
+        DefaultMutableTreeNode root;
+        root = (DefaultMutableTreeNode) model.getRoot();
         model.reload(root);
-        //jtCiudades.expandPath(p.getParentPath());
 
     }
 
     public int contar(String ssqlConteo) {
         int cuenta = 0;
         try {
-            Statement st = cn.createStatement();
-            try (ResultSet rs = st.executeQuery(ssqlConteo)) {
+            try (Statement st = cn.createStatement()) {
+                ResultSet rs = st.executeQuery(ssqlConteo);
                 rs.first();
                 cuenta = rs.getInt(1);
             }
         } catch (SQLException ex) {
-
+            LOG_RAIZ.log(Level.INFO, "Error contando en la bd ");
         }
         return cuenta;
     }
@@ -580,47 +579,40 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
     }
 
     public void reproducirSonido() {
+        Clip sonido = null;
         try {
-            Clip sonido = null;
+
             try {
-
-                try {
-                    sonido = AudioSystem.getClip();
-                    //ile a = new File(nombreSonido);
-                } catch (LineUnavailableException ex) {
-                    JOptionPane.showMessageDialog(null, "Verifique la salida de audio.");
-                }
-
+                sonido = AudioSystem.getClip();
                 InputStream path = null;
+
+                //path=new BufferedInputStream(new FileInputStream("/bell3.wav"));  //La raiz del disco
+                //path=new BufferedInputStream(new FileInputStream("bell5.wav"));  //La raiz del proyecto  sin src
                 try {
-                    //path=new BufferedInputStream(new FileInputStream("/bell3.wav"));  //La raiz del disco
-                    //path=new BufferedInputStream(new FileInputStream("bell5.wav"));  //La raiz del proyecto  sin src
                     path = new BufferedInputStream(new FileInputStream(sNombreSonido));  //La raiz del proyecto
                 } catch (FileNotFoundException ex) {
-                    JOptionPane.showMessageDialog(null, "Archivo no encontrado:" + sNombreSonido);
+                    Logger.getLogger(frmEquipoEstadoActual.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                try {
+                    try {
+                        sonido.open(AudioSystem.getAudioInputStream(path));
+                    } catch (UnsupportedAudioFileException ex) {
+                        Logger.getLogger(frmEquipoEstadoActual.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                } catch (IOException ex) {
+                    Logger.getLogger(frmEquipoEstadoActual.class.getName()).log(Level.SEVERE, null, ex);
                 }
 
-                try {
-                    //Relativa a la carpeta . en este caso vsgestionmonitoreo
-                    //path = this.getClass().getResourceAsStream("Sonidos/bell2.wav");
-                    //Relativa a Src
-                    //path = this.getClass().getResourceAsStream("/bell3.wav");
-                    sonido.open(AudioSystem.getAudioInputStream(path));
-                } catch (LineUnavailableException ex) {
-                    JOptionPane.showMessageDialog(null, "Linea de audio no disponible.");
-                }
                 sonido.start();
-            } catch (UnsupportedAudioFileException | IOException ex) {
-                JOptionPane.showMessageDialog(null, "Problema desconocido con la reproducción de audio.");
+            } catch (LineUnavailableException ex) {
+                JOptionPane.showMessageDialog(null, "Linea de audio no disponible.");
             }
-            Thread.sleep(1000); //
+
+        } finally {
             if (sonido != null) {
                 sonido.close();
             } else {
             }
-
-        } catch (InterruptedException ex) {
-            Logger.getLogger(frmEquipoEstadoActual.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -629,7 +621,10 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
      *
      */
     public void informarNovedades() {
-
+        int x;
+        int y;
+        x = 0;
+        y = 0;
         DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) frmEquipoEstadoActual.this.jtCiudades.getLastSelectedPathComponent();
         TreeNode p = null;
         if (null == selectedNode) {
@@ -647,23 +642,34 @@ public final class frmEquipoEstadoActual extends javax.swing.JFrame {
         modificaTreeview();
 
         try {
-            Statement st;
-            st = cn.createStatement();
-            ResultSet rs = st.executeQuery(ssqlTotal);
-            while (rs.next()) {
-                if (rs.getString(11).equals("0")) {
-                    this.reproducirSonido();
-                    JOptionPane.showMessageDialog(null, "Equipo " + rs.getString(2) + " " + rs.getString(6));
-                    PreparedStatement pst;
-                    String ssqlu = "UPDATE EquipoEstadoActual SET actualizacionno=1 WHERE Equipo_idEquipo=" + rs.getString(1) + " AND EstadoOperacion_idEstadoOperacion=" + rs.getString(5);
-                    pst = cn.prepareStatement(ssqlu);
-                    pst.executeUpdate();
+            try (Statement st = cn.createStatement()) {
+                ResultSet rs = st.executeQuery(ssqlTotal);
+                while (rs.next()) {
+                    x = x + 3;
+                    y = y + 20;
+                    if (rs.getString(11).equals("0")) {
+                        this.reproducirSonido();
+
+                        //JOptionPane.showMessageDialog(null, "Equipo " + rs.getString(2) + " " + rs.getString(6)
+                        frmAlerta falerta;
+                        falerta = new frmAlerta("Equipo " + rs.getString(2) + " " + rs.getString(6));
+
+                        falerta.setLayout(null);
+                        falerta.setSize(300, 150);
+                        falerta.setLocation((175 + x) % 800, (50 + y) % 800);
+                        falerta.setModalExclusionType(Dialog.ModalExclusionType.APPLICATION_EXCLUDE);
+                        falerta.setTitle(rs.getString(4));
+                        falerta.setVisible(true);
+                        PreparedStatement pst;
+                        String ssqlu = "UPDATE EquipoEstadoActual SET actualizacionno=1 WHERE Equipo_idEquipo=" + rs.getString(1) + " AND EstadoOperacion_idEstadoOperacion=" + rs.getString(5);
+                        pst = cn.prepareStatement(ssqlu);
+                        pst.executeUpdate();
+                    }
                 }
-            };
+            }
 
         } catch (SQLException ex) {
-            Logger.getLogger(frmEquipoEstadoActual.class
-                    .getName()).log(Level.SEVERE, null, ex);
+            LOG_RAIZ.log(Level.INFO, "Error informando novedades equipos ");
         }
 
         modificaTreeview();
